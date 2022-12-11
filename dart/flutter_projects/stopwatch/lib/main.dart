@@ -14,28 +14,30 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  int centiSeconds = 0;
-  int seconds = 0;
-  int minutes = 0;
-  int hours = 0;
+  int _centiSeconds = 0;
+  int _seconds = 0;
+  int _minutes = 0;
+  int _hours = 0;
+  bool _isRunning = false;
 
   @override
   void initState() {
     super.initState();
     Timer.periodic(const Duration(milliseconds: 10), (timer) {
+      if (!_isRunning) return;
       setState(() {
-        centiSeconds++;
-        if (centiSeconds == 100) {
-          centiSeconds = 0;
-          seconds++;
+        _centiSeconds++;
+        if (_centiSeconds == 100) {
+          _centiSeconds = 0;
+          _seconds++;
         }
-        if (seconds == 60) {
-          seconds = 0;
-          minutes++;
+        if (_seconds == 60) {
+          _seconds = 0;
+          _minutes++;
         }
-        if (minutes == 60) {
-          minutes = 0;
-          hours++;
+        if (_minutes == 60) {
+          _minutes = 0;
+          _hours++;
         }
       });
     });
@@ -79,7 +81,7 @@ class _MyAppState extends State<MyApp> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                "${_alwaysTwoDigits(hours)}:${_alwaysTwoDigits(minutes)}:${_alwaysTwoDigits(seconds)}:${_alwaysTwoDigits(centiSeconds)}",
+                "${_alwaysTwoDigits(_hours)}:${_alwaysTwoDigits(_minutes)}:${_alwaysTwoDigits(_seconds)}:${_alwaysTwoDigits(_centiSeconds)}",
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Colors.white,
@@ -91,11 +93,26 @@ class _MyAppState extends State<MyApp> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _button(Colors.green, "Start", () {}),
+                  _button(Colors.green, "Start", () {
+                    setState(() {
+                      _isRunning = true;
+                    });
+                  }),
                   const SizedBox(width: 10),
-                  _button(Colors.red, "Stop", () {}),
+                  _button(Colors.red, "Stop", () {
+                    setState(() {
+                      _isRunning = false;
+                    });
+                  }),
                   const SizedBox(width: 10),
-                  _button(Colors.blue, "Reset", () {}),
+                  _button(Colors.blue, "Reset", () {
+                    setState(() {
+                      _centiSeconds = 0;
+                      _hours = 0;
+                      _minutes = 0;
+                      _seconds = 0;
+                    });
+                  }),
                 ],
               )
             ],
