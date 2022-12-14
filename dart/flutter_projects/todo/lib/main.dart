@@ -1,98 +1,203 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:todo/todo.dart';
 
 void main() {
-  runApp(const TodoApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: ((context) => TodoProvider()),
+        )
+      ],
+      child: MaterialApp(home: App()),
+    ),
+  );
 }
 
-class Todo {
-  String title;
-  bool isDone = false;
+enum Toggle { all, active, completed }
 
-  Todo(this.title);
-}
-
-class TodoApp extends StatefulWidget {
-  const TodoApp({super.key});
+class App extends StatefulWidget {
+  const App({super.key});
 
   @override
-  State<TodoApp> createState() => _TodoAppState();
+  State<App> createState() => _AppState();
 }
 
-class _TodoAppState extends State<TodoApp> {
+class _AppState extends State<App> {
   final _controller = TextEditingController();
-  final _todos = <Todo>[];
+  var toggle = Toggle.all;
+
+  @override
+  void dispose() {
+    super.dispose();
+    _controller.dispose();
+  }
+
+  ButtonStyle buttonStyle({bool inactive = false}) {
+    return ButtonStyle(
+        backgroundColor: MaterialStatePropertyAll(
+            inactive ? Colors.black.withOpacity(0.5) : Colors.black),
+        shape: MaterialStatePropertyAll(RoundedRectangleBorder()));
+  }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 30),
-              decoration: BoxDecoration(border: Border.all(width: 1)),
-              child: Column(
-                children: [
-                  const SizedBox(
-                    height: 30,
-                  ),
-                  Row(
+    final provider = Provider.of<TodoProvider>(context);
+    final todos = Provider.of<TodoProvider>(context).todos;
+    return Scaffold(
+      body: Center(
+        child: Container(
+          width: 500,
+          height: 400,
+          decoration: BoxDecoration(border: Border.all(width: 1)),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              children: [
+                Flexible(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Flexible(
+                      Expanded(
                         flex: 4,
                         child: TextField(
                           controller: _controller,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                               border: OutlineInputBorder(
-                                  borderRadius:
-                                      BorderRadius.all(Radius.circular(0))),
-                              hintText: "Add todo"),
+                                  borderRadius: BorderRadius.zero)),
                         ),
                       ),
-                      const SizedBox(
-                        width: 10,
-                      ),
-                      Expanded(
+                      SizedBox(width: 10),
+                      Flexible(
                         child: Container(
-                          height: 50,
                           child: ElevatedButton(
-                            style: const ButtonStyle(
-                              backgroundColor:
-                                  MaterialStatePropertyAll(Colors.black),
-                              shape: MaterialStatePropertyAll(
-                                  RoundedRectangleBorder()),
-                            ),
-                            child: const Text("Submit"),
+                            style: buttonStyle(),
                             onPressed: () {
-                              setState(() {
-                                _todos.add(Todo(_controller.text));
-                              });
+                              provider.addTodo(_controller.text);
                             },
+                            child: Text("Submit"),
                           ),
                         ),
                       ),
                     ],
                   ),
-                  Column(
+                ),
+                Expanded(
+                  flex: 6,
+                  child: Container(
+                    padding: EdgeInsets.only(top: 5),
+                    child: ListView.builder(
+                      itemCount: todos.length,
+                      itemBuilder: ((context, index) {
+                        if (toggle == Toggle.all) {
+                          return Column(
+                            children: [
+                              TodoRow(todos[index]),
+                              Divider(),
+                            ],
+                          );
+                        } else if (toggle == Toggle.completed) {
+                          return todos[index].isDone == true
+                              ? Column(
+                                  children: [
+                                    TodoRow(todos[index]),
+                                    Divider(),
+                                  ],
+                                )
+                              : Container();
+                        } else {
+                          return todos[index].isDone == false
+                              ? Column(
+                                  children: [
+                                    TodoRow(todos[index]),
+                                    Divider(),
+                                  ],
+                                )
+                              : Container();
+                        }
+                      }),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      for (final todo in _todos)
-                        Row(
-                          children: [
-                            Checkbox(
-                                value: todo.isDone,
-                                onChanged: (value) {
-                                  setState(() {
-                                    todo.isDone = value ?? false;
-                                  });
-                                }),
-                            Text("${todo.title}")
-                          ],
-                        )
+                      Text(
+                        "${provider.todosLeft()} items left",
+                        style: Theme.of(context).textTheme.caption,
+                      ),
+                      Row(
+                        children: [
+                          ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                toggle = Toggle.all;
+                              });
+                            },
+                            child: Text("All"),
+                            style: buttonStyle(
+                              inactive: toggle != Toggle.all,
+                            ),
+                          ),
+                          SizedBox(width: 10),
+                          ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                toggle = Toggle.active;
+                              });
+                            },
+                            child: Text("Active"),
+                            style: buttonStyle(
+                              inactive: toggle != Toggle.active,
+                            ),
+                          ),
+                          SizedBox(width: 10),
+                          ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                toggle = Toggle.completed;
+                              });
+                            },
+                            child: Text("Completed"),
+                            style: buttonStyle(
+                              inactive: toggle != Toggle.completed,
+                            ),
+                          ),
+                        ],
+                      )
                     ],
                   ),
-                ],
-              )),
+                )
+              ],
+            ),
+          ),
         ),
       ),
+    );
+  }
+}
+
+class TodoRow extends StatelessWidget {
+  const TodoRow(this.todo, {super.key});
+
+  final Todo todo;
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = Provider.of<TodoProvider>(context);
+    return Row(
+      children: [
+        Checkbox(
+          value: todo.isDone,
+          onChanged: (value) => provider.toggleTodo(todo, value!),
+          fillColor: MaterialStatePropertyAll(Colors.black),
+        ),
+        Text("${todo.text}"),
+      ],
     );
   }
 }
