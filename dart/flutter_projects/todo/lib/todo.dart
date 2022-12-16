@@ -25,9 +25,11 @@ class TodoProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  addTodo(String text) {
-    _todos.add(Todo(text));
+  Todo addTodo(String text) {
+    final todo = Todo(text);
+    _todos.add(todo);
     notifyListeners();
+    return todo;
   }
 
   removeTodo(Todo todo) {
