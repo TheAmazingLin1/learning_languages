@@ -1,13 +1,1 @@
-- Requirements + solutions:
-    - Start and stop the game
-        - Button for play 
-    - Keep track of the score
-        - variable cpu score and player score
-    - Tracking the game state
-        - create an enum x, o and unpressed and make a 2d array of that
-    - Play against cpu
-        - When cpu's turn look for a valid move then play it
-    - Cpu cant make turn till we do and vice versa
-    - Track if the game is finished
-        - When a move is made check the vertical horizontal and diagonal pieces to see if it's the same. And if it is then that player hould get a point
-
+![res|300](fin.png)
